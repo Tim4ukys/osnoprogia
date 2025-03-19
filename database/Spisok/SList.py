@@ -6,10 +6,11 @@ class SList:
 
 # Размер списка
 def length(lst):
+    l = lst
     r = 0
-    while lst is not None:
+    while l:
         r += 1
-        lst = lst.next
+        l = l.next
     return r
 
 
@@ -23,29 +24,30 @@ def prepend(lst, data):
 
 # Возвращает значение по его индексу
 def get(lst, index):
+    l = lst
     for _ in range(index):
-        if lst is None:
+        if not l:
             break
-        lst = lst.next
-    return lst.val if lst is not None else None
+        l = l.next
+    return l.val if l else None
 
 
 # Удаляет элемент по его порядковому номеру. Возвращает его данные и новое начало списка.
-# Возвращает: [value, list]
+# Возвращает: value, list
 def remove(lst, index):
-    begin = lst
+    begin = l = lst
     for _ in range(index - 1):
-        if lst is None:
-            return [None, begin]
-        lst = lst.next
-    if lst is None or lst.next is None:
-        return [None, begin]
+        if not l:
+            return None, begin
+        l = l.next
+    if not l or not l.next:
+        return None, begin
     elif index == 0:
-        return [begin.val , begin.next]
+        return begin.val, begin.next
 
-    t = lst.next
-    lst.next = t.next
-    return [t.val, begin if index == 0 else lst]
+    t = l.next
+    l.next = t.next
+    return (t.val, begin) if index == 0 else l
 
 
 # Добавить в хвост. Возвращает новое начало списка.
@@ -54,10 +56,11 @@ def append(lst, data):
     t = SList()
     t.val = data
     t.next = None
-    if lst is not None:
-        while lst.next is not None:
-            lst = lst.next
-        lst.next = t
+    if lst:
+        l = lst
+        while l.next:
+            l = l.next
+        l.next = t
         return begin
     else:
         return t
@@ -65,30 +68,32 @@ def append(lst, data):
 
 # Возвращает данные последнего элемента.
 def get_last(lst):
-    if lst is None:
+    if not lst:
         return None
-    while lst.next is not None:
-        lst = lst.next
-    return lst.val
+    l = lst
+    while l.next:
+        l = l.next
+    return l.val
 
 # Возвращает первый индекс листа с нужными данными
 def find(lst, data):
-    return find_custom(lst, lambda v: v == data)
+    return find_custom(lst, lambda v: v == data)[1]
 
 
 # Удалить первый элемент из списка со значением data. Возвращает новое начало списка.
 def remove_first(lst, data):
-    if lst is None:
+    if not lst:
         return None
     elif lst.val == data:
         return lst.next
 
     begin = lst
-    while lst.next is not None:
-        prev = lst
-        lst = lst.next
-        if  lst.val == data:
-            prev.next = lst.next
+    l = lst
+    while l.next:
+        prev = l
+        l = l.next
+        if  l.val == data:
+            prev.next = l.next
             break
 
     return begin
@@ -96,60 +101,64 @@ def remove_first(lst, data):
 
 # Удалить все элементы из списка со значением data. Возвращает новое начало списка.
 def remove_all(lst, data):
-    if lst is None:
+    l = lst
+    if not lst:
         return None
-    elif lst.val == data:
-        lst = lst.next
-    begin = lst
+    elif l.val == data:
+        l = l.next
+    begin = l
 
-    while lst.next is not None:
-        prev = lst
-        lst = lst.next
-        if lst.val == data:
-            prev.next = lst.next
-            lst = prev
+    while l.next:
+        prev = l
+        l = l.next
+        if l.val == data:
+            prev.next = l.next
+            l = prev
 
     return begin
 
 
 #  Скопировать список. Возвращает начало копии.
 def copy(lst):
-    if lst is None:
+    if not lst:
         return None
     r = t = SList()
+    l = lst
     while True:
-        t.val = lst.val
-        if lst.next is None:
+        t.val = l.val
+        if not l.next:
             t.next = None
             return r
 
         t.next = SList()
         t = t.next
-        lst = lst.next
+        l = l.next
 
 # Присоединяет в хвост списка lst1 список lst2. Возвращает новое начало объединенного списка.
 def concat(lst1, lst2):
-    if lst1 is None:
+    if not lst1:
         return lst2
-    r = lst1
-    while lst1.next is not None:
-        lst1 = lst1.next
-    lst1.next = lst2
-    return r
+    l = lst1
+    while l.next:
+        l = l.next
+    l.next = lst2
+    return lst1
 
 # Обход списка. Функции func на каждом шаге передаются данные очередного элемента списка.
 def foreach(lst, func):
-    while lst is not None:
-        func(lst.val)
-        lst = lst.next
+    l = lst
+    while l:
+        func(l.val)
+        l = l.next
 
 
 # Возвращает значение и индекс первого элемента, для которого данная функция-предикат возвращает истину.
 def find_custom(lst, predicate):
     r = 0
-    while lst is not None:
-        if predicate(lst.val):
-            return r
-        lst = lst.next
+    l = lst
+    while l:
+        if predicate(l.val):
+            return l.val, r
+        l = l.next
         r += 1
-    return -1
+    return None, -1

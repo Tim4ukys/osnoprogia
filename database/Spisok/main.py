@@ -28,7 +28,7 @@ assert ([SList.get(l, i) for i in range(len(numbs))] == numbs[::-1] and
         [SList.get(l_two, i) for i in range(len(numbs))] == numbs)
 
 # remove
-assert (SList.remove(None, 2) == [None, None] and SList.remove(None, 0) == [None, None])
+assert (SList.remove(None, 2) == (None, None) and SList.remove(None, 0) == (None, None))
 
 l = initList([i for i in range(1, 6)])
 v, l = SList.remove(l, 0)
@@ -43,14 +43,14 @@ assert (SList.find(l, v) == -1 and SList.find(l, SList.get_last(l)) == SList.len
 assert (SList.find(None, 1) == -1)
 
 # find_custom
-assert (SList.find_custom(None, None) == -1)
+assert (SList.find_custom(None, None) ==  (None, -1))
 
 l = initList([i for i in range(3, 16)])
 predicate = lambda x: x % 3 == 0
-vi = SList.find_custom(l, predicate)
+_, vi = SList.find_custom(l, predicate)
 _, l = SList.remove(l, vi)
 
-assert (vi == 0 and SList.find_custom(l, predicate) == 2)
+assert (vi == 0 and SList.find_custom(l, predicate)[1] == 2)
 
 # remove_first
 assert (SList.remove_first(None, 1) is None)
