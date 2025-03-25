@@ -1,8 +1,9 @@
 from math import gcd
 
-# num
-# den
 class Rational:
+    num = 0
+    den = 0
+
     def __eq__(self, other):
         return self.__cmp__(other) == 0
     def __cmp__(self, other):
@@ -21,8 +22,6 @@ def _check_is_invalid_args(a, b):
 def create(numer, denom):
     r = Rational()
     if numer == 0:
-        r.num = 0
-        r.den = 0
         return r
     elif not denom or not numer:
         return None
@@ -111,6 +110,3 @@ def to_str(r):
     if not isinstance(r, Rational):
         return None
     return f"{r.num}/{r.den}"
-
-
-
