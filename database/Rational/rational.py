@@ -2,7 +2,7 @@ from math import gcd
 
 class Rational:
     num = 0
-    den = 0
+    den = 1
 
     def __eq__(self, other):
         return self.__cmp__(other) == 0
@@ -16,17 +16,19 @@ class Rational:
     def __str__(self):
         return f"{self.num}/{self.den} (float64: {to_float(self)})"
 
-def _check_is_invalid_args(a, b):
-    return not (isinstance(a, Rational) and isinstance(b, Rational))
+def _check_is_invalid_args(a, b, tp=Rational):
+    return not (isinstance(a, tp) and isinstance(b, tp))
 
 def create(numer, denom):
-    r = Rational()
-    if numer == 0:
-        return r
-    elif not denom or not numer:
+    if _check_is_invalid_args(numer, denom, int):
         return None
-    r.num = abs(numer) * (-1 if numer * denom < 0 else 1)
-    r.den = abs(denom)
+    r = Rational()
+    if not denom:
+        return None
+    if not numer:
+        return r
+    r.num = -numer if denom < 0 else numer
+    r.den = -denom if denom < 0 else denom
     _balance(r)
     return r
 
@@ -88,13 +90,18 @@ def div(a, b):
     return create(a.num * b.den, a.den * b.num)
 
 def power(n, pw):
-    if not isinstance(n, Rational):
+    if not isinstance(n, Rational) or pw is None:
         return None
     if pw > 0:
         a = create(n.num, n.den)
+    elif pw == 0:
+        return create(1, 1)
     else:
         a = create(n.den, n.num)
+        pw = -pw
     r = create(1, 1)
+    if not a:
+        return None
     if pw&1:
         r.num, r.den = a.num, a.den
     pw >>= 1
