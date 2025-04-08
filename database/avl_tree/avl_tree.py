@@ -9,7 +9,6 @@ class _Node:
     height = 0
 
 # ~~~~~~~~~~~~~~~~~~~~~~
-# mb ret new root
 
 def _height(a : _Node):
     return a.height if a else -1
@@ -68,14 +67,9 @@ def _fix_balance(tr : Tree):
         if _height(b.right) > _height(b.left):
             _lr(tr.left)
         _rr(tr)
-    _fix_height(tr)
+    else:
+        _fix_height(tr)
 
-# fix:
-# 1. node == None в двух случаях | complete
-# 2. вынести fix_balance в отдельную функцию, дабы связать функу с delete | complete
-# 3. чекнуть функу, когда нужный элемент tr | complete
-# 4. tr ссылка на голову внутри  | complete
-# 5. избавиться от hasattr | naxya??
 def insert(tr : Tree, data, cmp_func = None):
     if not tr:
         return _Node(data)
@@ -84,7 +78,6 @@ def insert(tr : Tree, data, cmp_func = None):
         tr.height = 0
         return None
 
-    # <~
     if not cmp_func:
         cmp_func = tr.cmpFunc
     cmp = cmp_func(data, tr.data)
@@ -101,7 +94,25 @@ def insert(tr : Tree, data, cmp_func = None):
     _fix_balance(tr)
     return tr if not hasattr(tr, "cmpFunc") else None
 
-# переписать
+def _get_del_min(tr : Tree):
+    if not tr:
+        return None, None
+
+    if not tr.left:
+        sv_data = tr.data
+        if tr.right:
+            tr.data = tr.right.data
+            tr.right = None
+            tr.height -= 1
+            return sv_data, tr
+        else:
+            return sv_data, None
+
+    save_data, tr.left = _get_del_min(tr.left)
+    _fix_balance(tr)
+    return save_data, tr
+
+
 def delete(tr : Tree, data, cmp_func = None):
     if not tr or not tr.data:
         return None
@@ -111,69 +122,19 @@ def delete(tr : Tree, data, cmp_func = None):
     cmp = cmp_func(data, tr.data)
     if cmp == 0:
         save_data = tr.data
-        if tr.right:
-            nm = tr.right
-            par = None
-            while nm.left:
-                par, nm = nm, nm.left
-            if par:
-                par.left = None
-            else:
-                tr.right = None
-            tr.data = nm.data
-        else:
-            if tr.left:
-                tr.data = tr.left.data
-                tr.left = None
-            else:
-                if hasattr(tr, "cmpFunc"):
-                    tr.data = None
-                    tr.height = -1
-                    return save_data
-                else:
-                    return None, save_data
+        tr.data, tr.right = _get_del_min(tr.right)
+        _fix_height(tr)
+        if tr.height == 0 and hasattr(tr, "cmpFunc"):
+            tr.height = -1
+        return save_data
 
     nm = delete(tr.left if cmp < 0 else tr.right, data, cmp_func)
-    if isinstance(nm, list):
-        if cmp < 0:
-            tr.left = None
-        else:
-            tr.right = None
+    if cmp < 0 and tr.left and not tr.left.data:
+        tr.left = None
+    elif tr.right and not tr.right.data:
+        tr.right = None
     _fix_balance(tr)
-    return nm[1] if isinstance(nm, list) else nm
-
-
-"""
-def delete(tr : Tree, data, cmp_func = None):
-    if not tr or not tr.data:
-        return None
-
-    # <~
-    if not cmp_func:
-        cmp_func = tr.cmpFunc
-    cmp = cmp_func(data, tr.data)
-    if cmp == 0:
-        # ~~~~~~~~~~~
-        # фиксануть
-        r = tr.right
-        if r:
-            r.left = tr.left
-        else:
-            r = tr.left
-        return (tr.data, r) if not hasattr(tr, "cmpFunc") else tr.data
-        # ~~~~~~~~~~~
-    r = delete(tr.left if cmp < 0 else tr.right, data, cmp_func)
-    if not r:
-        return
-    save_data, next_point = r
-    if cmp < 0:
-        tr.left = next_point
-    else:
-        tr.right = next_point
-    _fix_balance(tr)
-    return (save_data, tr) if not hasattr(tr, "cmpFunc") else save_data
-"""
-
+    return nm
 
 def foreach(tr : Tree, func, extra_data):
     if not tr or tr.height == -1:
