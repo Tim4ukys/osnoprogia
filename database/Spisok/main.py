@@ -19,7 +19,7 @@ for i in numbs:
     l = SList.prepend(l, i)
     l_two = SList.append(l_two, i)
 
-# get and length
+# get and height
 assert (SList.length(None) == 0)
 assert (SList.get(None, 1) is None)
 

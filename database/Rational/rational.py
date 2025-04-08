@@ -1,4 +1,3 @@
-from math import gcd
 
 class Rational:
     num = 0
