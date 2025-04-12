@@ -1,52 +1,48 @@
+from collections import deque
 
 class _Node:
-    def __init__(self, data):
+    def __init__(self, data, rt):
         self.data = data
+        self.root = rt
 
+    root = None
     left = None
     right = None
     data = None
-    height = 0
 
 # ~~~~~~~~~~~~~~~~~~~~~~
-
-def _height(a : _Node):
-    return a.height if a else -1
-
-def _fix_height(a : _Node):
-    a.height = max(_height(a.right), _height(a.left)) + 1
 
 def _lr(a : _Node):
     a.right, a.left = a.left, a.right
     b = a.left
     b.left, b.right = b.right, b.left
+    if b.left:
+        b.left.root = a
+    if a.right:
+        a.right.root = b
     b.left, a.right = a.right, b.left
     a.data, b.data = b.data, a.data
-    _fix_height(b)
-    _fix_height(a)
 
 def _rr(a : _Node):
     a.right, a.left = a.left, a.right
     b = a.right
     b.left, b.right = b.right, b.left
+    if b.right:
+        b.right.root = a
+    if a.left:
+        a.left.root = b
     a.left, b.right = b.right, a.left
     a.data, b.data = b.data, a.data
-    _fix_height(b)
-    _fix_height(a)
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~
 
-class Tree(_Node):
-    def __init__(self):
-        self.height = -1
-        pass
-
+class Tree:
+    root : _Node = None
     cmpFunc = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~
 
-def create(cmp_function) -> Tree:
+def create(cmp_function):
     if not cmp_function:
         return None
     r = Tree()
@@ -54,7 +50,24 @@ def create(cmp_function) -> Tree:
     return r
 
 # ~~~~~~~~~~~~~~~~~~~~~~
-def _fix_balance(tr : Tree):
+def _height(tr : _Node):
+    if not tr:
+        return 0
+    deq = deque()
+    deq.append(tr)
+    ans = 0
+    while len(deq) > 0:
+        c = len(deq)
+        while c > 0:
+            ch = deq.popleft()
+            c -= 1
+            if ch.left: deq.append(ch.left)
+            if ch.right: deq.append(ch.right)
+        ans += 1
+    return ans
+
+
+def _fix_balance(tr : _Node):
     r_height, l_height = _height(tr.right), _height(tr.left)
     balance = r_height - l_height
     if balance > 1: # lr
@@ -67,32 +80,38 @@ def _fix_balance(tr : Tree):
         if _height(b.right) > _height(b.left):
             _lr(tr.left)
         _rr(tr)
-    else:
-        _fix_height(tr)
 
-def insert(tr : Tree, data, cmp_func = None):
+def insert(tr : Tree, data):
     if not tr:
-        return _Node(data)
-    elif not tr.data:
-        tr.data = data
-        tr.height = 0
+        return None
+    if not tr.root:
+        tr.root = _Node(data, None)
         return None
 
-    if not cmp_func:
-        cmp_func = tr.cmpFunc
-    cmp = cmp_func(data, tr.data)
-    if cmp == 0:
-        data, tr.data = tr.data, data
-        return data
-    r = insert(tr.left if cmp < 0 else tr.right, data, cmp_func)
-    if not isinstance(r, _Node):
-        return r
-    elif cmp < 0:
-        tr.left = r
-    else:
-        tr.right = r
-    _fix_balance(tr)
-    return tr if not hasattr(tr, "cmpFunc") else None
+    # Ищу куда вставить
+    ch = tr.root
+    while True:
+        cmp = tr.cmpFunc(data, ch.data)
+        if cmp == 0:
+            sv_data, ch.data = ch.data, data
+            return sv_data
+        if cmp < 0:
+            if not ch.left:
+                ch.left = _Node(data, ch)
+                break
+            else:
+                ch = ch.left
+        else:
+            if not ch.right:
+                ch.right = _Node(data, ch)
+                break
+            else:
+                ch = ch.right
+
+    # Балансировка
+    while ch:
+        _fix_balance(ch)
+        ch = ch.root
 
 def _get_del_min(tr : Tree):
     if not tr:
@@ -103,7 +122,6 @@ def _get_del_min(tr : Tree):
         if tr.right:
             tr.data = tr.right.data
             tr.right = None
-            tr.height -= 1
             return sv_data, tr
         else:
             return sv_data, None
@@ -113,46 +131,85 @@ def _get_del_min(tr : Tree):
     return save_data, tr
 
 
-def delete(tr : Tree, data, cmp_func = None):
-    if not tr or not tr.data:
-        return None
-    if not cmp_func:
-        cmp_func = tr.cmpFunc
+def delete(tr : Tree, data):
+    if not tr or not tr.root:
+        return
 
-    cmp = cmp_func(data, tr.data)
-    if cmp == 0:
-        save_data = tr.data
-        tr.data, tr.right = _get_del_min(tr.right)
-        _fix_height(tr)
-        if tr.height == 0 and hasattr(tr, "cmpFunc"):
-            tr.height = -1
-        return save_data
+    ch = tr.root
+    save_data = None
+    while True:
+        if not ch:
+            return None
+        cmp = tr.cmpFunc(data, ch.data)
+        if cmp == 0:
+            save_data = ch.data
+            if not ch.right:
+                if ch.left:
+                    ch.data, ch.left = ch.left.data, None
+                elif not ch.root:
+                    tr.root = None
+                elif tr.cmpFunc(ch.data, ch.root.data) < 0:
+                    ch.root.left = None
+                else:
+                    ch.root.right = None
+                ch = ch.root
+            else:
+                min_ch = ch.right
+                if not min_ch.left:
+                    if not min_ch.right:
+                        ch.data = min_ch.data
+                        ch.right = None
+                    else:
+                        ch.data, min_ch.data = min_ch.data, min_ch.right.data
+                        min_ch.right = None
+                else:
+                    while min_ch.left:
+                        min_ch = min_ch.left
+                    if min_ch.right:
+                        ch.data, min_ch.data = min_ch.data, min_ch.right.data
+                        min_ch.right = None
+                    else:
+                        ch.data = min_ch.data
+                        min_ch.root.left = None
+                ch = min_ch.root
+            break
+        elif cmp < 0:
+            ch = ch.left
+        else:
+            ch = ch.right
 
-    nm = delete(tr.left if cmp < 0 else tr.right, data, cmp_func)
-    if cmp < 0 and tr.left and not tr.left.data:
-        tr.left = None
-    elif tr.right and not tr.right.data:
-        tr.right = None
-    _fix_balance(tr)
-    return nm
+    while ch:
+        _fix_balance(ch)
+        ch = ch.root
+    return save_data
+
 
 def foreach(tr : Tree, func, extra_data):
-    if not tr or tr.height == -1:
+    if not tr.root:
         return
-    foreach(tr.left, func, extra_data)
-    func(tr.data, extra_data)
-    foreach(tr.right, func, extra_data)
+    stack = []
+    ch = tr.root
+    while len(stack) > 0 or ch:
+        while ch:
+            stack.append(ch)
+            ch = ch.left
+        ch = stack.pop()
+        func(ch.data, extra_data)
+        ch = ch.right
 
 def find(tr : Tree, data):
-    if not tr or tr.height == -1:
-        return
-    c = tr.cmpFunc(tr.data, data)
-    if c < 0:
-        return find(tr.left, data)
-    elif c > 0:
-        return find(tr.right, data)
-    else:
-        return tr.data
+    if not tr:
+        return None
+    ch = tr.root
+    while ch:
+        cmp = tr.cmpFunc(data, ch.data)
+        if cmp == 0:
+            return ch.data
+        elif cmp < 0:
+            ch = ch.left
+        else:
+            ch = ch.right
+    return None
 
 def _clc_size(_, x):
     x[0] += 1
@@ -162,6 +219,4 @@ def size(tr : Tree):
     return a[0]
 
 def clear(tr : Tree):
-    tr.data = None
-    tr.right = None
-    tr.left = None
+    tr.root = None
