@@ -113,23 +113,6 @@ def insert(tr : Tree, data):
         _fix_balance(ch)
         ch = ch.root
 
-def _get_del_min(tr : Tree):
-    if not tr:
-        return None, None
-
-    if not tr.left:
-        sv_data = tr.data
-        if tr.right:
-            tr.data = tr.right.data
-            tr.right = None
-            return sv_data, tr
-        else:
-            return sv_data, None
-
-    save_data, tr.left = _get_del_min(tr.left)
-    _fix_balance(tr)
-    return save_data, tr
-
 
 def delete(tr : Tree, data):
     if not tr or not tr.root:
@@ -219,4 +202,5 @@ def size(tr : Tree):
     return a[0]
 
 def clear(tr : Tree):
-    tr.root = None
+    if tr:
+        tr.root = None
