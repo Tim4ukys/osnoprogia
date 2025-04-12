@@ -33,6 +33,6 @@ while numbs:
 
 assert not avl.delete(None, None)
 assert not avl.insert(None, 2)
-assert not avl.foreach(None)
+assert not avl.foreach(None, None, None)
 assert not avl.size(None) == 0
 avl.clear(None)
