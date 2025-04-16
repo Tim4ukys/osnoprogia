@@ -1,11 +1,9 @@
 from collections import deque
 
 class _Node:
-    def __init__(self, data, rt):
+    def __init__(self, data):
         self.data = data
-        self.root = rt
 
-    root = None
     left = None
     right = None
     data = None
@@ -16,10 +14,6 @@ def _lr(a : _Node):
     a.right, a.left = a.left, a.right
     b = a.left
     b.left, b.right = b.right, b.left
-    if b.left:
-        b.left.root = a
-    if a.right:
-        a.right.root = b
     b.left, a.right = a.right, b.left
     a.data, b.data = b.data, a.data
 
@@ -27,17 +21,13 @@ def _rr(a : _Node):
     a.right, a.left = a.left, a.right
     b = a.right
     b.left, b.right = b.right, b.left
-    if b.right:
-        b.right.root = a
-    if a.left:
-        a.left.root = b
     a.left, b.right = b.right, a.left
     a.data, b.data = b.data, a.data
 
 # ~~~~~~~~~~~~~~~~~~~~~~
 
 class Tree:
-    root : _Node = None
+    root = None
     cmpFunc = None
 
 # ~~~~~~~~~~~~~~~~~~~~~~
@@ -85,90 +75,98 @@ def insert(tr : Tree, data):
     if not tr:
         return None
     if not tr.root:
-        tr.root = _Node(data, None)
+        tr.root = _Node(data)
         return None
 
     # Ищу куда вставить
     ch = tr.root
+    parents = list()
     while True:
         cmp = tr.cmpFunc(data, ch.data)
         if cmp == 0:
             sv_data, ch.data = ch.data, data
             return sv_data
+        parents.append(ch)
         if cmp < 0:
             if not ch.left:
-                ch.left = _Node(data, ch)
+                ch.left = _Node(data)
                 break
             else:
                 ch = ch.left
         else:
             if not ch.right:
-                ch.right = _Node(data, ch)
+                ch.right = _Node(data)
                 break
             else:
                 ch = ch.right
 
     # Балансировка
-    while ch:
-        _fix_balance(ch)
-        ch = ch.root
-
+    while parents:
+        _fix_balance(parents.pop())
 
 def delete(tr : Tree, data):
-    if not tr or not tr.root:
+    if not tr:
         return
 
     ch = tr.root
     save_data = None
+    parents = list()
+
     while True:
         if not ch:
             return None
         cmp = tr.cmpFunc(data, ch.data)
-        if cmp == 0:
-            save_data = ch.data
-            if not ch.right:
-                if ch.left:
-                    ch.data, ch.left = ch.left.data, None
-                elif not ch.root:
-                    tr.root = None
-                elif tr.cmpFunc(ch.data, ch.root.data) < 0:
-                    ch.root.left = None
-                else:
-                    ch.root.right = None
-                ch = ch.root
-            else:
-                min_ch = ch.right
-                if not min_ch.left:
-                    if not min_ch.right:
-                        ch.data = min_ch.data
-                        ch.right = None
-                    else:
-                        ch.data, min_ch.data = min_ch.data, min_ch.right.data
-                        min_ch.right = None
-                else:
-                    while min_ch.left:
-                        min_ch = min_ch.left
-                    if min_ch.right:
-                        ch.data, min_ch.data = min_ch.data, min_ch.right.data
-                        min_ch.right = None
-                    else:
-                        ch.data = min_ch.data
-                        min_ch.root.left = None
-                ch = min_ch.root
-            break
-        elif cmp < 0:
+        if cmp < 0:
+            parents.append(ch)
             ch = ch.left
-        else:
+            continue
+        elif cmp > 0:
+            parents.append(ch)
             ch = ch.right
+            continue
+        break
 
-    while ch:
-        _fix_balance(ch)
-        ch = ch.root
+    save_data = ch.data
+
+    if not ch.right and not ch.left:
+        if len(parents) == 0:
+            tr.root = None
+        elif tr.cmpFunc(ch.data, parents[-1].data) < 0:
+            parents[-1].left = None
+        else:
+            parents[-1].right = None
+    elif not ch.right:
+        ch.data, ch.left = ch.left.data, None
+    elif not ch.left:
+        ch.data, ch.right = ch.right.data, None
+    else:
+        parents.append(ch)
+        min_ch = ch.right
+        if not min_ch.left:
+            if not min_ch.right:
+                ch.data = min_ch.data
+                ch.right = None
+            else:
+                ch.data, min_ch.data = min_ch.data, min_ch.right.data
+                min_ch.right = None
+        else:
+            while min_ch.left:
+                parents.append(min_ch)
+                min_ch = min_ch.left
+            if min_ch.right:
+                ch.data, min_ch.data = min_ch.data, min_ch.right.data
+                min_ch.right = None
+            else:
+                ch.data = min_ch.data
+                parents[-1].left = None
+
+    while parents:
+        _fix_balance(parents.pop())
     return save_data
 
 
-def foreach(tr : Tree, func, extra_data):
-    if not tr.root:
+def foreach(tr : Tree, func):
+    if not tr:
         return
     stack = []
     ch = tr.root
@@ -177,7 +175,7 @@ def foreach(tr : Tree, func, extra_data):
             stack.append(ch)
             ch = ch.left
         ch = stack.pop()
-        func(ch.data, extra_data)
+        func(ch.data)
         ch = ch.right
 
 def find(tr : Tree, data):
@@ -194,12 +192,21 @@ def find(tr : Tree, data):
             ch = ch.right
     return None
 
-def _clc_size(_, x):
-    x[0] += 1
 def size(tr : Tree):
-    a = [0]
-    foreach(tr, _clc_size, a)
-    return a[0]
+    sz = 0
+    if not tr:
+        return sz
+    stack = []
+    ch = tr.root
+    while len(stack) > 0 or ch:
+        while ch:
+            stack.append(ch)
+            ch = ch.left
+        ch = stack.pop()
+        sz += 1
+        ch = ch.right
+    return sz
+
 
 def clear(tr : Tree):
     if tr:
