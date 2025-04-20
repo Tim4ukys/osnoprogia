@@ -7,8 +7,7 @@ class _List:
         self.key = key
         self.data = data
 
-# почему два аргумента в замыкании?
-def _jenkins_hash(a, text : str):
+def _jenkins_hash(text : str):
     BIT_64 = 0xFFFF_FFFF_FFFF_FFFF # или лучше 32?
     hash = 0
     for i in text:
@@ -29,10 +28,7 @@ class _Table:
             return hash_func(str) % sz
         self.get_key = get_key
         self.size = sz
-
-def _tab_get_key(tab : _Table, key : str):
-    gk = tab.get_key
-    return gk(key)
+        self.table = [None for _ in range(sz)]
 
 def _tab_empty(tab : _Table):
     for i in tab.table:
@@ -41,23 +37,26 @@ def _tab_empty(tab : _Table):
     return True
 
 def _tab_set(tab : _Table, key : str, data, dtor):
-    k = _tab_get_key(tab, key)
+    k = tab.get_key(key)
     ls = tab.table[k]
     if not ls:
         tab.table[k] = _List(key, data)
         return
 
-    while ls.next:
+    while True:
         if ls.key == key:
-            dtor(ls.data)
+            if dtor:
+                dtor(ls.data)
             data, ls.data = ls.data, data
             return data
+        if ls.next is None:
+            break
         ls = ls.next
 
     ls.next = _List(key, data)
 
 def _tab_get(tab : _Table, key : str):
-    k = _tab_get_key(tab, key)
+    k = tab.get_key(key)
     ls = tab.table[k]
     while ls:
         if ls.key == key:
@@ -65,7 +64,7 @@ def _tab_get(tab : _Table, key : str):
         ls = ls.next
 
 def _tab_delete(tab : _Table, key : str, dtor):
-    k = _tab_get_key(tab, key)
+    k = tab.get_key(key)
     ls = tab.table[k]
     pr = None
     while ls:
@@ -82,16 +81,18 @@ def _tab_delete(tab : _Table, key : str, dtor):
 
 class HashTable:
     tabs : list = None # самый актуальный будет в конце
-    hash_func = _jenkins_hash
+    hash_func = None
     dtor = None
 
-# Инициализировать таблицу
+# Создать хеш таблицу
 def ht_init(size, hash_func = None, destructor = None):
     ht = HashTable()
     if size <= 0:
         return
     if hash_func:
         ht.hash_func = hash_func
+    else:
+        ht.hash_func = _jenkins_hash
     if destructor:
         ht.dtor = destructor
     ht.tabs = list([_Table(size, ht.hash_func)])
@@ -99,11 +100,12 @@ def ht_init(size, hash_func = None, destructor = None):
 
 # Уничтожить таблицу
 def ht_destroy(ht : HashTable):
-    def dest(_, data):
-        ht.dtor(data)
-    ht_traverse(ht, dest)
+    if ht.dtor:
+        def dest(_, data):
+            ht.dtor(data)
+        ht_traverse(ht, dest)
+        ht.dtor = None
     ht.tabs.clear()
-    ht.dtor = None
     ht.hash_func = None
 
 def _ht_remove_empty_tabs(ht : HashTable, li):
@@ -124,7 +126,7 @@ def _ht_refresh(ht : HashTable, key : str):
     _ht_remove_empty_tabs(ht, len(ht.tabs) - 1)
     return save_data
 
-# Записать в таблицу соответствие key -> data.
+# Записать в таблицу key -> data
 def ht_set(ht : HashTable, key : str, data):
     save_data = _ht_refresh(ht, key)
     tb = ht.tabs[-1]
@@ -140,7 +142,7 @@ def ht_get(ht : HashTable, key : str):
         save_data = _tab_get(ht.tabs[-1], key)
     return save_data
 
-# Проверка существования ключа key в таблице. 1 - есть, 0 - нет.
+# Проверка существования ключа key в таблице. True - есть, False - нет.
 def ht_hash(ht : HashTable, key : str):
     return ht_get(ht, key) is not None
 
@@ -172,3 +174,20 @@ def ht_traverse(ht : HashTable, f):
 def ht_resize(ht : HashTable, new_size):
     _ht_remove_empty_tabs(ht, len(ht.tabs))
     ht.tabs.append(_Table(new_size, ht.hash_func))
+
+# ~~~~~~ debug functions ~~~~~~~~
+def _list_get_sz(l : _List):
+    ls = l
+    sz = 0
+    while ls:
+        sz += 1
+        ls = ls.next
+    return sz
+
+def ht_get_size_info(ht : HashTable):
+    r = []
+    for tb in ht.tabs:
+        r.append([_list_get_sz(l) for l in tb.table])
+    return r
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
