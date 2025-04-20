@@ -29,9 +29,12 @@ hs = h.ht_init(15, hash, lambda x: text.append(x))
 for a, b in enumerate(['a', 'b', 'c'], 1):
     assert h.ht_set(hs, f"{a}", b) is None
     assert h.ht_set(hs, f"{a}", b) == b
+assert len(set(text)) == 3
+text.clear()
 for i in range(1, 4):
     assert h.ht_delete(hs, f"{i}") in text
     assert h.ht_delete(hs, f"{i}") not in text
+assert len(set(text)) == 3
 h.ht_destroy(hs)
 
 
