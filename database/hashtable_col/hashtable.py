@@ -66,14 +66,14 @@ def _tab_get(tab : _Table, key : str):
 def _tab_delete(tab : _Table, key : str, dtor):
     k = tab.get_key(key)
     ls = tab.table[k]
-    pr = None
+    parent = None
     while ls:
         if ls.key == key:
             save_data = ls.data
             if dtor:
                 dtor(ls.data)
-            if pr:
-                pr.next = ls.next
+            if parent:
+                parent.next = ls.next
             else:
                 tab.table[k] = ls.next
             return save_data
@@ -89,10 +89,7 @@ def ht_init(size, hash_func = None, destructor = None):
     ht = HashTable()
     if size <= 0:
         return
-    if hash_func:
-        ht.hash_func = hash_func
-    else:
-        ht.hash_func = _jenkins_hash
+    ht.hash_func = hash_func if hash_func else _jenkins_hash
     if destructor:
         ht.dtor = destructor
     ht.tabs = list([_Table(size, ht.hash_func)])
@@ -108,9 +105,9 @@ def ht_destroy(ht : HashTable):
     ht.tabs.clear()
     ht.hash_func = None
 
-def _ht_remove_empty_tabs(ht : HashTable, li):
+def _ht_remove_empty_tabs(ht : HashTable, idx):
     i = 0
-    while i < li:
+    while i < idx:
         if _tab_empty(ht.tabs[i]):
             ht.tabs.remove(ht.tabs[i])
         else:
@@ -143,7 +140,7 @@ def ht_get(ht : HashTable, key : str):
     return save_data
 
 # Проверка существования ключа key в таблице. True - есть, False - нет.
-def ht_hash(ht : HashTable, key : str):
+def ht_has(ht : HashTable, key : str):
     return ht_get(ht, key) is not None
 
 # Удалить элемент с ключом key из таблицы (если он есть)
@@ -172,22 +169,7 @@ def ht_traverse(ht : HashTable, f):
 
 # Изменить размер базового массива.
 def ht_resize(ht : HashTable, new_size):
+    if new_size <= 0:
+        return
     _ht_remove_empty_tabs(ht, len(ht.tabs))
     ht.tabs.append(_Table(new_size, ht.hash_func))
-
-# ~~~~~~ debug functions ~~~~~~~~
-def _list_get_sz(l : _List):
-    ls = l
-    sz = 0
-    while ls:
-        sz += 1
-        ls = ls.next
-    return sz
-
-def ht_get_size_info(ht : HashTable):
-    r = []
-    for tb in ht.tabs:
-        r.append([_list_get_sz(l) for l in tb.table])
-    return r
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
