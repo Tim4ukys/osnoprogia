@@ -1,5 +1,4 @@
 import postfix_calc
-import test
 import sys
 
 print('send exit to go exit')
