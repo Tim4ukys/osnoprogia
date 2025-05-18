@@ -18,15 +18,11 @@ def postfix_calc(expression):
     stack : SList = None
     size = 0
     for i in expression.split():
-        def devision(a,b):
-            if b == 0:
-                raise ZeroDivisionError()
-            return a/b
         oper = {
             "-": lambda a, b: a-b,
             "+": lambda a, b: a+b,
             "*": lambda a, b: a*b,
-            "/": devision,
+            "/": lambda a, b: a/b,
             '^': lambda a, b: a**b,
             "%": lambda a, b: a%b
         }

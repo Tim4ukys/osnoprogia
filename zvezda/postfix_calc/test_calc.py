@@ -25,6 +25,7 @@ def test_malo_chisel():
 
 def test_zero():
     _try_calc("3 2 0 * /", ZeroDivisionError)
+    _try_calc("3 0 %", ZeroDivisionError)
 
 def test_UnkValue():
     _try_calc("2 0 - petya", ValueError)
