@@ -17,6 +17,11 @@ def test_simply_calc():
     assert postfix_calc("3 5 2 * + 10 4 - 6 / + 7 2 * 1 + - 4 2 ^ + 2 %") == 1
     assert isnan(postfix_calc("3 2 nan / *"))
 
+def test_mnogo_chisel():
+    _try_calc("3 2 4 /", RuntimeError)
+
+def test_malo_chisel():
+    _try_calc("3 2 4 / + -", BufferError)
 
 def test_zero():
     _try_calc("3 2 0 * /", ZeroDivisionError)
